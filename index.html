@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ozodbek Wrestling Payment</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: 'var(--bg)', card: 'var(--card)', card2: 'var(--card2)',
+        line: 'var(--line)', tx: 'var(--tx)', mut: 'var(--mut)',
+        gold: 'var(--gold)', ongold: 'var(--on-gold)',
+        ok: 'var(--ok)', okbg: 'var(--okbg)',
+        bad: 'var(--bad)', badbg: 'var(--badbg)'
+      }
+    }
+  }
+}
+</script>
+<style>
+:root {
+  --bg:#0e0f13; --card:#171921; --card2:#1e212b; --line:#2a2e3b;
+  --tx:#f3f4f7; --mut:#9097a8; --gold:#f5b324; --on-gold:#1a1300;
+  --ok:#22c55e; --okbg:#10301d; --bad:#ef4444; --badbg:#3a1618;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:#f4f5f8; --card:#fff; --card2:#f0f2f6; --line:#dfe3ea;
+    --tx:#14161c; --mut:#667085; --gold:#d99200; --on-gold:#fff;
+    --ok:#15803d; --okbg:#dcfce7; --bad:#dc2626; --badbg:#fee2e2;
+  }
+}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4}
+</style>
+</head>
+<body>
+<div id="password-gate" class="hidden fixed inset-0 z-[100] grid place-items-center bg-bg p-4" role="dialog" aria-modal="true" aria-labelledby="password-title">
+  <form id="password-form" class="w-full max-w-[360px] bg-card border border-line rounded-[18px] p-5">
+    <h1 class="m-0 mb-1 text-xl font-semibold">Ozodbek <span class="text-gold">Wrestling</span></h1>
+    <p id="password-title" class="text-mut text-sm mb-4">Davom etish uchun parolni kiriting.</p>
+    <input id="page-password" type="password" autocomplete="current-password" required placeholder="Parol"
+      class="w-full p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold">
+    <div id="password-error" class="hidden text-bad text-sm mt-2" role="alert"></div>
+    <div class="flex gap-2 mt-3">
+      <button id="password-cancel" type="button" class="flex-1 px-4 py-3 rounded-xl font-bold text-sm cursor-pointer bg-card2 text-tx border border-line">Bekor</button>
+      <button id="password-submit" type="submit" class="flex-1 px-4 py-3 rounded-xl font-bold text-sm cursor-pointer bg-gold text-ongold">Kirish</button>
+    </div>
+  </form>
+</div>
+
+<div id="app-content" class="max-w-[900px] mx-auto p-4" style="padding-top:calc(1rem + env(safe-area-inset-top,0px));padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))">
+
+  <header class="flex items-center gap-3 mt-2 mb-4">
+    <div class="w-[46px] h-[46px] rounded-[14px] bg-gradient-to-br from-gold to-[#e5532d] grid place-items-center text-2xl shrink-0">🤼</div>
+    <div>
+      <h1 class="text-xl m-0 font-semibold">Ozodbek <span class="text-gold">Wrestling</span> Payment</h1>
+      <div class="text-mut text-sm">Erkin kurash zali · oylik to‘lovlar nazorati</div>
+    </div>
+  </header>
+
+  <div id="dbmsg" class="hidden bg-badbg text-bad rounded-xl p-3 mb-3.5 text-sm">Baza ulanmadi. Iltimos, index.html ichidagi CONFIG bo'limiga Supabase-dan olingan haqiqiy anon kalitni kiriting.</div>
+
+  <div class="flex gap-2 mb-3.5" id="tabs">
+    <button id="tab-p" class="flex-1 p-3 rounded-xl border font-bold text-[15px] cursor-pointer bg-gold text-ongold border-gold">👪 Ota-onalar</button>
+    <button id="tab-t" class="flex-1 p-3 rounded-xl border font-bold text-[15px] cursor-pointer bg-card text-tx border-line">🏋️ Trenerlar</button>
+  </div>
+
+  <section id="pv">
+    <div class="bg-card border border-line rounded-[18px] p-3.5 mb-3.5">
+      <div class="text-xs text-mut uppercase tracking-wider mb-2">O‘quvchi ID raqamini kiriting</div>
+      <div class="flex gap-2 flex-wrap items-center">
+        <input id="p-id" placeholder="Masalan: OW-001" class="flex-1 min-w-[160px] p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold uppercase">
+        <button id="p-go" class="px-4 py-3 rounded-xl font-bold text-sm cursor-pointer bg-gold text-ongold">Ko‘rish</button>
+      </div>
+      <div class="text-mut text-sm mt-2">ID raqamni trenerdan oling. Oxirgi 12 oylik to‘lovlar sana va soati bilan ko‘rinadi.</div>
+    </div>
+    <div id="p-res"></div>
+  </section>
+
+  <section id="tv" class="hidden">
+    <div class="bg-card border border-line rounded-[18px] p-3.5 mb-3.5">
+      <div class="text-xs text-mut uppercase tracking-wider mb-2">Kim belgilayapti? (trener)</div>
+      <div class="flex gap-2 flex-wrap items-center" id="trainers"></div>
+    </div>
+
+    <div id="tpanel" class="hidden">
+      <div class="bg-card border border-line rounded-[18px] p-3.5 mb-3.5 flex items-center justify-between gap-2.5">
+        <button id="prev" class="w-[42px] h-[42px] rounded-xl border border-line bg-card2 text-tx text-lg cursor-pointer shrink-0">‹</button>
+        <b id="mlabel" class="text-lg"></b>
+        <button id="next" class="w-[42px] h-[42px] rounded-xl border border-line bg-card2 text-tx text-lg cursor-pointer shrink-0">›</button>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3.5">
+        <div class="bg-card border border-line rounded-2xl p-3"><small class="text-mut text-xs block">O‘quvchilar</small><b id="s-all" class="text-xl">0</b></div>
+        <div class="bg-card border border-line rounded-2xl p-3"><small class="text-mut text-xs block">To‘lagan</small><b id="s-paid" class="text-xl text-ok">0</b></div>
+        <div class="bg-card border border-line rounded-2xl p-3"><small class="text-mut text-xs block">To‘lamagan</small><b id="s-unpaid" class="text-xl text-bad">0</b></div>
+        <div class="bg-card border border-line rounded-2xl p-3"><small class="text-mut text-xs block">Jami tushum</small><b id="s-sum" class="text-xl text-gold">0</b></div>
+      </div>
+
+      <div class="h-2 bg-card2 rounded-full overflow-hidden mb-3.5"><i id="bar" class="block h-full bg-gradient-to-r from-ok to-gold transition-[width] duration-300" style="width:0%"></i></div>
+
+      <div class="bg-card border border-line rounded-[18px] p-3.5 mb-3.5">
+        <div class="text-xs text-mut uppercase tracking-wider mb-2">Yangi o‘quvchi qo‘shish</div>
+        <div class="grid grid-cols-2 md:grid-cols-[2fr_1fr_1.3fr_auto] gap-2">
+          <input id="n-name" placeholder="Ism familiya" class="col-span-2 md:col-span-1 p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold">
+          <input id="n-fee" type="number" inputmode="numeric" placeholder="Oylik (so‘m)" value="300000" class="p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold">
+          <select id="n-tr" class="p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold"></select>
+          <button id="n-add" class="col-span-2 md:col-span-1 px-4 py-3 rounded-xl font-bold text-sm cursor-pointer bg-gold text-ongold">+ Qo‘shish</button>
+        </div>
+      </div>
+
+      <div class="bg-card border border-line rounded-[18px] p-3.5 mb-3.5">
+        <div class="flex gap-2 flex-wrap items-center">
+          <input id="q" placeholder="🔍 Ism yoki ID bo‘yicha qidirish" class="flex-[2] min-w-[160px] p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold">
+          <select id="f" class="flex-1 min-w-[140px] p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold">
+            <option value="all">Hammasi</option>
+            <option value="paid">To‘laganlar</option>
+            <option value="unpaid">To‘lamaganlar</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid gap-2.5" id="list"></div>
+    </div>
+  </section>
+
+  <div class="text-center text-mut text-xs my-5">Ma’lumotlar umumiy bazada saqlanadi va barcha qurilmalarda bir xil ko‘rinadi.</div>
+</div>
+
+<div id="modal" class="fixed inset-0 bg-black/60 hidden place-items-center p-4 z-50">
+  <div class="bg-card border border-line rounded-[20px] p-5 w-full max-w-[380px]">
+    <div class="text-xs text-mut uppercase tracking-wider mb-2">To‘lovni belgilash</div>
+    <h3 id="m-name" class="m-0 mb-3"></h3>
+    <input id="m-amt" type="number" inputmode="numeric" placeholder="Summa (so‘m)" class="w-full p-3 rounded-xl border border-line bg-card2 text-tx text-[15px] focus:outline-none focus:ring-2 focus:ring-gold">
+    <div class="text-mut text-sm mt-2 mb-3.5">Sana va soat serverda avtomatik yoziladi.</div>
+    <div class="flex gap-2 flex-wrap items-center">
+      <button id="m-cancel" class="flex-1 px-4 py-3 rounded-xl font-bold text-sm cursor-pointer bg-card2 text-tx border border-line">Bekor</button>
+      <button id="m-ok" class="flex-1 px-4 py-3 rounded-xl font-bold text-sm cursor-pointer bg-ok text-white">✓ Tasdiqlash</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bg-tx text-bg px-4 py-3 rounded-xl font-semibold opacity-0 pointer-events-none transition-opacity duration-300 z-[60] max-w-[90%]" style="bottom:calc(20px + env(safe-area-inset-bottom,0px))"></div>
+
+<script>
+var CONFIG = {
+  URL: "https://kcigexkfdxdomwjjivki.supabase.co",
+  KEY: "sb_publishable_s7yFQMl7jyA5rshCbLt80g_DBmVXW6-"
+};
+
+var TRAINERS=["Yusupov Oybek","Islombek"];
+var MONTHS=["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
+var ST=[],PAYS={},me=null,payId=null;
+var now=new Date(),cy=now.getFullYear(),cm=now.getMonth();
+
+function $(i){return document.getElementById(i)}
+function p2(n){return String(n).padStart(2,"0")}
+function mk(){return cy+"-"+p2(cm+1)}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function money(n){return Number(n).toLocaleString("ru-RU")+" so‘m"}
+function fmt(iso){
+  var o={};
+  new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Tashkent",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})
+    .formatToParts(new Date(iso)).forEach(function(x){o[x.type]=x.value});
+  return o.day+"."+o.month+"."+o.year+" · "+o.hour+":"+o.minute;
+}
+
+function toast(m){
+  var t=$("toast");
+  t.textContent=m;
+  t.classList.remove("opacity-0"); t.classList.add("opacity-100");
+  setTimeout(function(){t.classList.remove("opacity-100"); t.classList.add("opacity-0")},2600);
+}
+function err(e){
+  toast((e&&e.message)||"Xato");
+  $("dbmsg").classList.remove("hidden");
+}
+function configured(){return CONFIG.URL.indexOf("SIZNING")<0 && CONFIG.KEY.indexOf("SIZNING")<0 && CONFIG.KEY.length > 20}
+
+async function rpc(fn,args){
+  if(!configured()) throw new Error("CONFIG to‘ldirilmagan. Iltimos, anon kalitni kiriting.");
+  var h={"Content-Type":"application/json",apikey:CONFIG.KEY};
+  if(CONFIG.KEY.indexOf("eyJ")===0) h.Authorization="Bearer "+CONFIG.KEY;
+  var r=await fetch(CONFIG.URL.replace(/\/$/,"")+"/rest/v1/rpc/"+fn,{method:"POST",headers:h,body:JSON.stringify(args||{})});
+  var j=null; try{j=await r.json()}catch(e){}
+  if(!r.ok) throw new Error((j&&j.message)||"Server xatosi");
+  $("dbmsg").classList.add("hidden");
+  return j;
+}
+
+/* ---- Tablar ---- */
+function setTab(t){
+  if(t==="p"){ $("pv").classList.remove("hidden"); $("tv").classList.add("hidden"); }
+  else       { $("pv").classList.add("hidden");    $("tv").classList.remove("hidden"); }
+  var base="flex-1 p-3 rounded-xl border font-bold text-[15px] cursor-pointer";
+  $("tab-p").className=base+" "+(t==="p"?"bg-gold text-ongold border-gold":"bg-card text-tx border-line");
+  $("tab-t").className=base+" "+(t==="t"?"bg-gold text-ongold border-gold":"bg-card text-tx border-line");
+}
+$("tab-p").onclick=function(){setTab("p")};
+$("tab-t").onclick=function(){if($("tv").classList.contains("hidden"))requireTrainerPassword()};
+
+/* ---- Ota-onalar ---- */
+async function lookup(){
+  var box=$("p-res"),v=$("p-id").value.trim();
+  if(!v){ box.innerHTML='<div class="text-center text-mut p-8">ID raqamni kiriting</div>'; return; }
+  box.innerHTML='<div class="text-center text-mut p-8">Yuklanmoqda…</div>';
+  var s;
+  try{ s=await rpc("parent_lookup",{p_code:v}); }
+  catch(e){ box.innerHTML='<div class="bg-card border border-line rounded-[18px] p-3.5 text-center text-mut p-8">'+esc(e.message)+'</div>'; return; }
+  if(!s){ box.innerHTML='<div class="bg-card border border-line rounded-[18px] p-3.5 text-center text-mut p-8">Bunday ID li o‘quvchi topilmadi. ID ni tekshiring.</div>'; return; }
+
+  var pm={}; (s.payments||[]).forEach(function(p){pm[p.month]=p});
+  var cr=new Date(s.created_at),first=new Date(cr.getFullYear(),cr.getMonth(),1),h="";
+  for(var i=0;i<12;i++){
+    var d=new Date(now.getFullYear(),now.getMonth()-i,1); if(d<first) break;
+    var k=d.getFullYear()+"-"+p2(d.getMonth()+1),p=pm[k];
+    h+='<div class="flex justify-between gap-2.5 items-center flex-wrap bg-card2 border-l-4 '+(p?'border-l-ok':'border-l-bad')+' rounded-xl p-3">'+
+         '<b class="text-[15px]">'+MONTHS[d.getMonth()]+' '+d.getFullYear()+'</b>'+
+         (p?'<span class="text-sm">✓ To‘langan · '+money(p.amount)+'<br>🕒 '+fmt(p.paid_at)+'</span>'
+           :'<span class="text-bad text-sm">✗ To‘lanmagan</span>')+
+       '</div>';
+  }
+  box.innerHTML='<div class="bg-card border border-line rounded-[18px] p-3.5">'+
+    '<span class="inline-block bg-card2 border border-line text-gold text-xs font-extrabold px-2 py-0.5 rounded-lg mr-1.5 tracking-wide align-middle">'+esc(s.code)+'</span>'+
+    '<h2 class="m-0 mb-1 text-[22px] font-semibold">'+esc(s.name)+'</h2>'+
+    '<div class="text-mut text-[13px]">Oylik to‘lov: '+money(s.fee)+' · Trener: '+esc(s.trainer)+'</div>'+
+    '<div class="grid gap-2 mt-3.5">'+h+'</div></div>';
+}
+$("p-go").onclick=lookup;
+$("p-id").onkeydown=function(e){if(e.key==="Enter")lookup()};
+
+/* ---- Trenerlar ---- */
+function renderTrainers(){
+  var base="flex-1 min-w-[130px] p-3 rounded-xl border font-semibold text-[15px] cursor-pointer";
+  $("trainers").innerHTML=TRAINERS.map(function(t){
+    return '<button class="'+base+' '+(me===t?'bg-gold text-ongold border-gold':'bg-card2 text-tx border-line')+'" data-t="'+esc(t)+'">👤 '+esc(t)+'</button>';
+  }).join("");
+  $("n-tr").innerHTML=TRAINERS.map(function(t){return '<option>'+esc(t)+'</option>'}).join("");
+  if(me) $("n-tr").value=me;
+  if(me) $("tpanel").classList.remove("hidden"); else $("tpanel").classList.add("hidden");
+}
+$("trainers").onclick=function(e){
+  var b=e.target.closest("[data-t]"); if(!b) return;
+  me=b.dataset.t;
+  try{localStorage.setItem("ow_trainer",me)}catch(x){}
+  renderTrainers(); load(); toast("Trener: "+me);
+};
+
+async function load(){
+  try{
+    var r=await rpc("list_data");
+    ST=r.students||[]; PAYS={};
+    (r.payments||[]).forEach(function(p){(PAYS[p.month]=PAYS[p.month]||{})[p.student_id]=p});
+    render();
+  }catch(e){err(e)}
+}
+async function act(fn,args,msg){
+  try{ var r=await rpc(fn,args); await load(); if(msg)toast(msg); return r||true; }
+  catch(e){ err(e); return null; }
+}
+
+function render(){
+  if(!me) return;
+  $("mlabel").textContent=MONTHS[cm]+" "+cy;
+  var pm=PAYS[mk()]||{},q=$("q").value.trim().toLowerCase(),f=$("f").value,paid=0,sum=0;
+  ST.forEach(function(s){if(pm[s.id]){paid++;sum+=Number(pm[s.id].amount)}});
+  var all=ST.length;
+  $("s-all").textContent=all;
+  $("s-paid").textContent=paid;
+  $("s-unpaid").textContent=all-paid;
+  $("s-sum").textContent=money(sum);
+  $("bar").style.width=(all?Math.round(paid/all*100):0)+"%";
+
+  var rows=ST.filter(function(s){
+    if(q && (s.name+" "+s.code).toLowerCase().indexOf(q)<0) return false;
+    if(f==="paid" && !pm[s.id]) return false;
+    if(f==="unpaid" && pm[s.id]) return false;
+    return true;
+  });
+
+  if(!rows.length){
+    $("list").innerHTML='<div class="text-center text-mut p-8">'+
+      (all?'Hech narsa topilmadi':'Hozircha o‘quvchi yo‘q. Yuqoridan qo‘shing 👆')+'</div>';
+    return;
+  }
+
+  $("list").innerHTML=rows.map(function(s){
+    var p=pm[s.id];
+    return '<div class="bg-card border border-line border-l-4 '+(p?'border-l-ok':'border-l-bad')+' rounded-2xl p-3.5 flex gap-3 items-center justify-between flex-wrap">'+
+      '<div class="min-w-0">'+
+        '<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold mb-1.5 '+(p?'bg-okbg text-ok':'bg-badbg text-bad')+'">'+
+          (p?'✓ To‘langan':'✗ To‘lanmagan')+'</span>'+
+        '<h3 class="m-0 mb-0.5 text-base font-semibold">'+
+          '<span class="inline-block bg-card2 border border-line text-gold text-xs font-extrabold px-2 py-0.5 rounded-lg mr-1.5 tracking-wide align-middle">'+esc(s.code)+'</span>'+
+          esc(s.name)+'</h3>'+
+        '<div class="text-mut text-[13px]">Oylik: '+money(s.fee)+' · Trener: '+esc(s.trainer)+'</div>'+
+        (p?'<div class="mt-1 text-[13px]">💰 '+money(p.amount)+'<br>🕒 '+fmt(p.paid_at)+'<br>✍️ Belgiladi: '+esc(p.by)+'</div>':'')+
+      '</div>'+
+      '<div class="flex gap-2 items-center w-full md:w-auto">'+
+        (p
+          ? '<button class="flex-1 md:flex-none px-3 py-2 text-[13px] rounded-xl font-bold cursor-pointer bg-card2 text-tx border border-line" data-undo="'+s.id+'">Bekor qilish</button>'
+          : '<button class="flex-1 md:flex-none px-3 py-2 text-[13px] rounded-xl font-bold cursor-pointer bg-ok text-white" data-pay="'+s.id+'">✓ To‘ladi</button>')+
+        '<button class="flex-1 md:flex-none px-3 py-2 text-[13px] rounded-xl font-bold cursor-pointer bg-card2 text-tx border border-line" data-del="'+s.id+'">🗑</button>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+}
+
+$("prev").onclick=function(){cm--;if(cm<0){cm=11;cy--}render()};
+$("next").onclick=function(){cm++;if(cm>11){cm=0;cy++}render()};
+$("q").oninput=render;
+$("f").onchange=render;
+
+$("n-add").onclick=async function(){
+  var name=$("n-name").value.trim(),fee=parseInt($("n-fee").value,10);
+  if(!name){toast("Ismni kiriting");return}
+  if(isNaN(fee)||fee<0){toast("Oylik summani kiriting");return}
+  var r=await act("add_student",{p_name:name,p_fee:fee,p_trainer:$("n-tr").value});
+  if(r&&r.code){$("n-name").value="";toast("Qo‘shildi ✓ ID: "+r.code)}
+};
+
+$("list").onclick=function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.pay){
+    payId=b.dataset.pay;
+    var s=ST.find(function(x){return x.id===payId});
+    $("m-name").textContent=s.code+" · "+s.name;
+    $("m-amt").value=s.fee;
+    $("modal").classList.remove("hidden");
+    $("modal").classList.add("grid");
+  }
+  else if(b.dataset.undo){ if(confirm("To‘lov belgisini bekor qilasizmi?")) act("delete_payment",{p_sid:b.dataset.undo,p_month:mk()},"Bekor qilindi"); }
+  else if(b.dataset.del){ if(confirm("O‘quvchini o‘chirasizmi? To‘lov tarixi ham o‘chadi.")) act("delete_student",{p_sid:b.dataset.del},"O‘chirildi"); }
+};
+
+$("m-cancel").onclick=function(){
+  $("modal").classList.add("hidden");
+  $("modal").classList.remove("grid");
+};
+
+$("m-ok").onclick=async function(){
+  var a=parseInt($("m-amt").value,10);
+  if(isNaN(a)||a<0){toast("Summani kiriting");return}
+  var r=await act("set_payment",{p_sid:payId,p_month:mk(),p_amount:a,p_by:me},"To‘lov belgilandi ✓");
+  if(r){ $("modal").classList.add("hidden"); $("modal").classList.remove("grid"); }
+};
+
+function initializeApp(){
+  try{localStorage.removeItem("ow_page_password")}catch(e){}
+  try{var sv=localStorage.getItem("ow_trainer");if(TRAINERS.indexOf(sv)>=0)me=sv}catch(e){}
+  renderTrainers();
+  if(!configured()) $("dbmsg").classList.remove("hidden");
+}
+
+var trainerRefresh=null;
+
+function requireTrainerPassword(){
+  var passwordInput=$("page-password"),errorBox=$("password-error");
+  passwordInput.value=""; errorBox.classList.add("hidden");
+  $("password-title").textContent="Trenerlar bo‘limiga kirish uchun parolni kiriting.";
+  passwordInput.autocomplete="current-password";
+  $("password-submit").textContent="Kirish";
+  $("app-content").inert=true;
+  $("app-content").setAttribute("aria-hidden","true");
+  $("password-gate").classList.remove("hidden");
+  passwordInput.focus();
+  $("password-cancel").onclick=function(){
+    $("password-gate").classList.add("hidden");
+    $("app-content").inert=false;
+    $("app-content").removeAttribute("aria-hidden");
+  };
+  $("password-form").onsubmit=async function(e){
+    e.preventDefault();
+    errorBox.classList.add("hidden");
+    try{
+      var verified=await rpc("verify_trainer_password",{p_password:passwordInput.value});
+      if(verified!==true) throw new Error("Parol noto‘g‘ri.");
+      $("password-gate").classList.add("hidden");
+      $("app-content").inert=false;
+      $("app-content").removeAttribute("aria-hidden");
+      setTab("t");
+      load();
+      if(trainerRefresh===null)trainerRefresh=setInterval(function(){if(!$("tv").classList.contains("hidden"))load()},20000);
+    }catch(error){
+      errorBox.textContent=error.message||"Parolni tekshirib bo‘lmadi.";
+      errorBox.classList.remove("hidden");
+    }
+  };
+}
+
+initializeApp();
+</script>
+</body>
+</html>
