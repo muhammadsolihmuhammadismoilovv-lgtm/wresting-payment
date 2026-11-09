@@ -349,7 +349,6 @@ $("m-ok").onclick=async function(){
 };
 
 function initializeApp(){
-  try{localStorage.removeItem("ow_page_password")}catch(e){}
   try{var sv=localStorage.getItem("ow_trainer");if(TRAINERS.indexOf(sv)>=0)me=sv}catch(e){}
   renderTrainers();
   if(!configured()) $("dbmsg").classList.remove("hidden");
