@@ -1,1 +1,2 @@
 # wresting-payment
+Bu loyixa tailwind css orqali yozilgan va maqsadi ota onalar yosh bolalariga beryatgan puliga to'lov qilishyaptimi yoki yo'q shuni tekshirish uchun bolalar ko'pincha sho'x bo'lishadi va o'zim 7 yarim yil davomida erkin kurash sporti bilan shug'ullanganman va zalimda bunday holatlarga ko'p guvoh bo'lganligim uchun trenerlarim uchun qilib berdim va trenerlarga ham kim to'lov qilganini daftarga yozb yurmaydi elektron belgilaydi   
